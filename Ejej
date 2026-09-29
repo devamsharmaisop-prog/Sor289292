@@ -1,0 +1,1921 @@
+--========================================================
+-- HACKER 101 // FINAL FIXED VERSION
+-- NO FULL-SCREEN 101010101 BINARY
+-- DRAGGABLE 101 LOGO
+-- MOBILE / TABLET / PC
+--========================================================
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--========================================================
+-- CLEAN OLD GUI
+--========================================================
+
+local old = PlayerGui:FindFirstChild("HACKER_101")
+
+if old then
+	old:Destroy()
+end
+
+--========================================================
+-- SETTINGS
+--========================================================
+
+local DEFAULT_SPEED = 16
+local DEFAULT_JUMP = 50
+local DEFAULT_HIP = 2
+local DEFAULT_GRAVITY = 196.2
+local DEFAULT_FOV = 70
+
+local speedValue = 50
+local jumpValue = 75
+local hipValue = 2
+local gravityValue = DEFAULT_GRAVITY
+local fovValue = 80
+
+local speedEnabled = false
+local jumpEnabled = false
+local noclipEnabled = false
+local infiniteJumpEnabled = false
+
+local Character
+local Humanoid
+local Root
+
+local startTime = os.clock()
+
+--========================================================
+-- CHARACTER
+--========================================================
+
+local function setupCharacter(char)
+
+	Character = char
+	Humanoid = char:WaitForChild("Humanoid")
+	Root = char:WaitForChild("HumanoidRootPart")
+
+end
+
+if LocalPlayer.Character then
+	setupCharacter(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	setupCharacter(char)
+end)
+
+--========================================================
+-- GUI
+--========================================================
+
+local GUI = Instance.new("ScreenGui")
+
+GUI.Name = "HACKER_101"
+GUI.ResetOnSpawn = false
+GUI.IgnoreGuiInset = true
+GUI.DisplayOrder = 100
+
+GUI.Parent = PlayerGui
+
+--========================================================
+-- IMPORTANT FIX
+--========================================================
+-- NO FULL SCREEN MATRIX TEXT
+-- The old Matrix TextLabel was the thing covering
+-- the entire screen with 101010101010.
+-- It has intentionally been removed.
+--========================================================
+
+--========================================================
+-- SMALL CYBER PARTICLE LAYER
+--========================================================
+
+local ParticleLayer = Instance.new("Frame")
+
+ParticleLayer.Name = "CyberParticles"
+ParticleLayer.Size = UDim2.fromScale(1,1)
+ParticleLayer.BackgroundTransparency = 1
+ParticleLayer.BorderSizePixel = 0
+ParticleLayer.ZIndex = 2
+
+ParticleLayer.Parent = GUI
+
+local function createParticle()
+
+	local p = Instance.new("TextLabel")
+
+	p.BackgroundTransparency = 1
+
+	p.Text =
+		math.random(1,2) == 1
+		and "1"
+		or "0"
+
+	p.TextColor3 =
+		Color3.fromRGB(
+			0,
+			math.random(180,255),
+			math.random(60,120)
+		)
+
+	p.Font = Enum.Font.Code
+	p.TextSize = math.random(10,18)
+
+	p.Size =
+		UDim2.fromOffset(20,20)
+
+	p.Position =
+		UDim2.fromScale(
+			math.random(5,95)/100,
+			math.random(5,95)/100
+		)
+
+	p.TextTransparency = 0.25
+	p.ZIndex = 2
+
+	p.Parent = ParticleLayer
+
+	TweenService:Create(
+		p,
+		TweenInfo.new(
+			math.random(15,30)/10,
+			Enum.EasingStyle.Linear
+		),
+		{
+			TextTransparency = 1,
+			Position =
+				UDim2.new(
+					p.Position.X.Scale,
+					0,
+					p.Position.Y.Scale - .12,
+					0
+				)
+		}
+	):Play()
+
+	task.delay(3,function()
+
+		if p then
+			p:Destroy()
+		end
+
+	end)
+
+end
+
+task.spawn(function()
+
+	while GUI.Parent do
+
+		if ParticleLayer.Visible then
+			createParticle()
+		end
+
+		task.wait(.25)
+
+	end
+
+end)
+
+--========================================================
+-- MAIN WINDOW
+--========================================================
+
+local Main = Instance.new("Frame")
+
+Main.Name = "Main"
+
+Main.Size =
+	UDim2.new(0,470,0,340)
+
+Main.Position =
+	UDim2.new(.5,-235,.5,-170)
+
+Main.BackgroundColor3 =
+	Color3.fromRGB(4,9,6)
+
+Main.BorderSizePixel = 0
+Main.ClipsDescendants = true
+
+Main.ZIndex = 10
+Main.Parent = GUI
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,15)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0,255,80)
+MainStroke.Thickness = 2
+MainStroke.Parent = Main
+
+--========================================================
+-- TOP BAR
+--========================================================
+
+local TopBar = Instance.new("Frame")
+
+TopBar.Size =
+	UDim2.new(1,0,0,60)
+
+TopBar.BackgroundTransparency = 1
+TopBar.ZIndex = 20
+TopBar.Parent = Main
+
+local Title = Instance.new("TextLabel")
+
+Title.Size =
+	UDim2.new(1,-110,0,30)
+
+Title.Position =
+	UDim2.new(0,18,0,5)
+
+Title.BackgroundTransparency = 1
+
+Title.Text = "HACKER 101"
+
+Title.TextColor3 =
+	Color3.fromRGB(0,255,80)
+
+Title.Font = Enum.Font.Code
+Title.TextSize = 25
+
+Title.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Title.ZIndex = 21
+Title.Parent = TopBar
+
+local Status = Instance.new("TextLabel")
+
+Status.Size =
+	UDim2.new(1,-110,0,18)
+
+Status.Position =
+	UDim2.new(0,20,0,35)
+
+Status.BackgroundTransparency = 1
+
+Status.Text = "● SYSTEM ONLINE"
+
+Status.TextColor3 =
+	Color3.fromRGB(100,255,140)
+
+Status.Font = Enum.Font.Code
+Status.TextSize = 10
+
+Status.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Status.ZIndex = 21
+Status.Parent = TopBar
+
+--========================================================
+-- MINIMIZE
+--========================================================
+
+local Minimize = Instance.new("TextButton")
+
+Minimize.Size =
+	UDim2.new(0,35,0,35)
+
+Minimize.Position =
+	UDim2.new(1,-86,0,11)
+
+Minimize.BackgroundColor3 =
+	Color3.fromRGB(8,35,17)
+
+Minimize.Text = "—"
+
+Minimize.TextColor3 =
+	Color3.fromRGB(0,255,80)
+
+Minimize.Font = Enum.Font.Code
+Minimize.TextSize = 20
+
+Minimize.AutoButtonColor = false
+Minimize.ZIndex = 25
+Minimize.Parent = TopBar
+
+Instance.new("UICorner",Minimize).CornerRadius =
+	UDim.new(0,8)
+
+--========================================================
+-- CLOSE
+--========================================================
+
+local Close = Instance.new("TextButton")
+
+Close.Size =
+	UDim2.new(0,35,0,35)
+
+Close.Position =
+	UDim2.new(1,-45,0,11)
+
+Close.BackgroundColor3 =
+	Color3.fromRGB(20,45,25)
+
+Close.Text = "×"
+
+Close.TextColor3 =
+	Color3.fromRGB(0,255,80)
+
+Close.Font = Enum.Font.Code
+Close.TextSize = 25
+
+Close.AutoButtonColor = false
+Close.ZIndex = 25
+Close.Parent = TopBar
+
+Instance.new("UICorner",Close).CornerRadius =
+	UDim.new(0,8)
+
+--========================================================
+-- 101 FLOATING LOGO
+--========================================================
+
+local Floating = Instance.new("TextButton")
+
+Floating.Name = "Hacker101Icon"
+
+Floating.Size =
+	UDim2.new(0,58,0,58)
+
+Floating.Position =
+	UDim2.new(1,-75,1,-85)
+
+Floating.BackgroundColor3 =
+	Color3.fromRGB(4,25,11)
+
+Floating.Text = "101"
+
+Floating.TextColor3 =
+	Color3.fromRGB(0,255,80)
+
+Floating.Font = Enum.Font.Code
+Floating.TextSize = 17
+
+Floating.AutoButtonColor = false
+
+Floating.Visible = false
+
+Floating.ZIndex = 100
+
+Floating.Parent = GUI
+
+local FloatCorner =
+	Instance.new("UICorner")
+
+FloatCorner.CornerRadius =
+	UDim.new(1,0)
+
+FloatCorner.Parent = Floating
+
+local FloatStroke =
+	Instance.new("UIStroke")
+
+FloatStroke.Color =
+	Color3.fromRGB(0,255,80)
+
+FloatStroke.Thickness = 2
+
+FloatStroke.Parent = Floating
+
+--========================================================
+-- DRAGGABLE 101 LOGO
+--========================================================
+
+local iconDragging = false
+local iconMoved = false
+local iconDragStart
+local iconStartPosition
+
+Floating.InputBegan:Connect(function(input)
+
+	if input.UserInputType ==
+		Enum.UserInputType.MouseButton1
+		or input.UserInputType ==
+		Enum.UserInputType.Touch then
+
+		iconDragging = true
+		iconMoved = false
+
+		iconDragStart =
+			input.Position
+
+		iconStartPosition =
+			Floating.Position
+
+		input.Changed:Connect(function()
+
+			if input.UserInputState ==
+				Enum.UserInputState.End then
+
+				iconDragging = false
+
+			end
+
+		end)
+
+	end
+
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+	if not iconDragging then
+		return
+	end
+
+	if input.UserInputType ==
+		Enum.UserInputType.MouseMovement
+		or input.UserInputType ==
+		Enum.UserInputType.Touch then
+
+		local delta =
+			input.Position -
+			iconDragStart
+
+		if math.abs(delta.X) > 4
+			or math.abs(delta.Y) > 4 then
+
+			iconMoved = true
+
+		end
+
+		Floating.Position =
+			UDim2.new(
+				iconStartPosition.X.Scale,
+				iconStartPosition.X.Offset + delta.X,
+
+				iconStartPosition.Y.Scale,
+				iconStartPosition.Y.Offset + delta.Y
+			)
+
+	end
+
+end)
+
+--========================================================
+-- PAGES
+--========================================================
+
+local Content = Instance.new("Frame")
+
+Content.Size =
+	UDim2.new(1,-150,1,-70)
+
+Content.Position =
+	UDim2.new(0,140,0,65)
+
+Content.BackgroundTransparency = 1
+
+Content.ZIndex = 15
+Content.Parent = Main
+
+local Sidebar = Instance.new("Frame")
+
+Sidebar.Size =
+	UDim2.new(0,125,1,-70)
+
+Sidebar.Position =
+	UDim2.new(0,10,0,65)
+
+Sidebar.BackgroundColor3 =
+	Color3.fromRGB(7,17,10)
+
+Sidebar.BorderSizePixel = 0
+
+Sidebar.ZIndex = 15
+Sidebar.Parent = Main
+
+Instance.new("UICorner",Sidebar).CornerRadius =
+	UDim.new(0,10)
+
+local SideLayout =
+	Instance.new("UIListLayout")
+
+SideLayout.Padding =
+	UDim.new(0,5)
+
+SideLayout.HorizontalAlignment =
+	Enum.HorizontalAlignment.Center
+
+SideLayout.Parent = Sidebar
+
+local SidePadding =
+	Instance.new("UIPadding")
+
+SidePadding.PaddingTop =
+	UDim.new(0,8)
+
+SidePadding.Parent = Sidebar
+
+--========================================================
+-- PAGES
+--========================================================
+
+local Pages = {}
+
+local function createPage(name)
+
+	local page =
+		Instance.new("ScrollingFrame")
+
+	page.Name = name
+
+	page.Size =
+		UDim2.fromScale(1,1)
+
+	page.BackgroundTransparency = 1
+	page.BorderSizePixel = 0
+
+	page.ScrollBarThickness = 3
+
+	page.ScrollBarImageColor3 =
+		Color3.fromRGB(0,255,80)
+
+	page.Visible = false
+
+	page.ZIndex = 16
+	page.Parent = Content
+
+	local layout =
+		Instance.new("UIListLayout")
+
+	layout.Padding =
+		UDim.new(0,7)
+
+	layout.Parent = page
+
+	local padding =
+		Instance.new("UIPadding")
+
+	padding.PaddingTop =
+		UDim.new(0,5)
+
+	padding.PaddingRight =
+		UDim.new(0,6)
+
+	padding.Parent = page
+
+	layout:GetPropertyChangedSignal(
+		"AbsoluteContentSize"
+	):Connect(function()
+
+		page.CanvasSize =
+			UDim2.new(
+				0,0,
+				0,
+				layout.AbsoluteContentSize.Y + 15
+			)
+
+	end)
+
+	Pages[name] = page
+
+	return page
+
+end
+
+local Home = createPage("HOME")
+local PlayerPage = createPage("PLAYER")
+local Farm = createPage("FARM")
+local Scripts = createPage("SCRIPTS")
+local Executor = createPage("EXECUTOR")
+local Visuals = createPage("VISUALS")
+local Settings = createPage("SETTINGS")
+
+--========================================================
+-- BUTTON
+--========================================================
+
+local function makeButton(parent,text,callback)
+
+	local button =
+		Instance.new("TextButton")
+
+	button.Size =
+		UDim2.new(1,-10,0,38)
+
+	button.BackgroundColor3 =
+		Color3.fromRGB(10,27,16)
+
+	button.BorderSizePixel = 0
+
+	button.Text = text
+
+	button.TextColor3 =
+		Color3.fromRGB(190,255,205)
+
+	button.Font = Enum.Font.Code
+	button.TextSize = 13
+
+	button.AutoButtonColor = false
+
+	button.ZIndex = 18
+	button.Parent = parent
+
+	Instance.new("UICorner",button).CornerRadius =
+		UDim.new(0,8)
+
+	local stroke =
+		Instance.new("UIStroke")
+
+	stroke.Color =
+		Color3.fromRGB(0,130,50)
+
+	stroke.Parent = button
+
+	button.MouseEnter:Connect(function()
+
+		button.BackgroundColor3 =
+			Color3.fromRGB(0,65,30)
+
+	end)
+
+	button.MouseLeave:Connect(function()
+
+		button.BackgroundColor3 =
+			Color3.fromRGB(10,27,16)
+
+	end)
+
+	button.MouseButton1Click:Connect(callback)
+
+	return button
+
+end
+
+local function makeLabel(parent,text)
+
+	local label =
+		Instance.new("TextLabel")
+
+	label.Size =
+		UDim2.new(1,-10,0,30)
+
+	label.BackgroundTransparency = 1
+
+	label.Text = text
+
+	label.TextColor3 =
+		Color3.fromRGB(0,255,80)
+
+	label.Font = Enum.Font.Code
+	label.TextSize = 14
+
+	label.TextXAlignment =
+		Enum.TextXAlignment.Left
+
+	label.ZIndex = 18
+	label.Parent = parent
+
+	return label
+
+end
+
+--========================================================
+-- PAGE SWITCH
+--========================================================
+
+local function showPage(name)
+
+	for pageName,page in pairs(Pages) do
+
+		page.Visible =
+			pageName == name
+
+	end
+
+end
+
+local function sideButton(text,page)
+
+	local b =
+		makeButton(
+			Sidebar,
+			text,
+			function()
+				showPage(page)
+			end
+		)
+
+	b.Size =
+		UDim2.new(1,-14,0,34)
+
+end
+
+sideButton("⌂ HOME","HOME")
+sideButton("♙ PLAYER","PLAYER")
+sideButton("⚡ FARM","FARM")
+sideButton("▣ SCRIPTS","SCRIPTS")
+sideButton(">_ EXECUTOR","EXECUTOR")
+sideButton("◈ VISUALS","VISUALS")
+sideButton("⚙ SETTINGS","SETTINGS")
+
+--========================================================
+-- HOME
+--========================================================
+
+makeLabel(Home,"SYSTEM STATUS")
+
+makeButton(
+	Home,
+	"● ONLINE // HACKER 101",
+	function() end
+)
+
+makeLabel(Home,"PLAYER")
+
+makeButton(
+	Home,
+	"NAME : "..LocalPlayer.Name,
+	function() end
+)
+
+makeButton(
+	Home,
+	"USER ID : "..LocalPlayer.UserId,
+	function() end
+)
+
+makeLabel(Home,"GAME")
+
+makeButton(
+	Home,
+	"GAME : "..game.Name,
+	function() end
+)
+
+makeButton(
+	Home,
+	"PLACE ID : "..game.PlaceId,
+	function() end
+)
+
+makeLabel(Home,"SESSION")
+
+local SessionButton =
+	makeButton(
+		Home,
+		"TIME PLAYED : 00:00:00",
+		function() end
+	)
+
+--========================================================
+-- PLAYER
+--========================================================
+
+makeLabel(
+	PlayerPage,
+	"MOVEMENT"
+)
+
+local SpeedButton
+local JumpButton
+local NoclipButton
+local InfiniteButton
+
+SpeedButton =
+	makeButton(
+		PlayerPage,
+		"SPEED : OFF",
+		function()
+
+			speedEnabled =
+				not speedEnabled
+
+			SpeedButton.Text =
+				speedEnabled
+				and "SPEED : ON ["..
+				speedValue.."]"
+				or "SPEED : OFF"
+
+		end
+	)
+
+JumpButton =
+	makeButton(
+		PlayerPage,
+		"JUMP BOOST : OFF",
+		function()
+
+			jumpEnabled =
+				not jumpEnabled
+
+			JumpButton.Text =
+				jumpEnabled
+				and "JUMP : ON ["..
+				jumpValue.."]"
+				or "JUMP BOOST : OFF"
+
+		end
+	)
+
+NoclipButton =
+	makeButton(
+		PlayerPage,
+		"NOCLIP : OFF",
+		function()
+
+			noclipEnabled =
+				not noclipEnabled
+
+			NoclipButton.Text =
+				noclipEnabled
+				and "NOCLIP : ON"
+				or "NOCLIP : OFF"
+
+		end
+	)
+
+InfiniteButton =
+	makeButton(
+		PlayerPage,
+		"INFINITE JUMP : OFF",
+		function()
+
+			infiniteJumpEnabled =
+				not infiniteJumpEnabled
+
+			InfiniteButton.Text =
+				infiniteJumpEnabled
+				and "INFINITE JUMP : ON"
+				or "INFINITE JUMP : OFF"
+
+		end
+	)
+
+makeButton(
+	PlayerPage,
+		"SIT / STAND",
+	function()
+
+		if Humanoid then
+			Humanoid.Sit =
+				not Humanoid.Sit
+		end
+
+	end
+)
+
+makeButton(
+	PlayerPage,
+		"RESET CHARACTER",
+	function()
+
+		if Humanoid then
+			Humanoid.Health = 0
+		end
+
+	end
+)
+
+--========================================================
+-- SWORD
+--========================================================
+
+local function giveTestSword()
+
+	local backpack =
+		LocalPlayer:WaitForChild("Backpack")
+
+	if backpack:FindFirstChild("H101 Sword")
+		or (Character and Character:FindFirstChild("H101 Sword")) then
+		return
+	end
+
+	local sword =
+		Instance.new("Tool")
+
+	sword.Name = "H101 Sword"
+	sword.ToolTip = "HACKER 101 test sword"
+
+	sword.RequiresHandle = true
+	sword.CanBeDropped = false
+
+	local handle =
+		Instance.new("Part")
+
+	handle.Name = "Handle"
+	handle.Size =
+		Vector3.new(.35,4,.35)
+
+	handle.Material =
+		Enum.Material.Neon
+
+	handle.Color =
+		Color3.fromRGB(0,255,80)
+
+	handle.CanCollide = false
+	handle.Massless = true
+
+	handle.Parent = sword
+
+	sword.Activated:Connect(function()
+
+		local grip =
+			sword.Grip
+
+		sword.Grip =
+			grip *
+			CFrame.Angles(
+				math.rad(-60),0,0
+			)
+
+		task.wait(.12)
+
+		if sword.Parent then
+			sword.Grip = grip
+		end
+
+	end)
+
+	sword.Parent = backpack
+
+end
+
+makeButton(
+	PlayerPage,
+	"⚔ GET H101 SWORD",
+	giveTestSword
+)
+
+--========================================================
+-- TELEPORT TOOL
+--========================================================
+
+local function giveTeleportTool()
+
+	local backpack =
+		LocalPlayer:WaitForChild("Backpack")
+
+	if backpack:FindFirstChild("H101 Teleport")
+		or (Character and Character:FindFirstChild("H101 Teleport")) then
+		return
+	end
+
+	local tool =
+		Instance.new("Tool")
+
+	tool.Name = "H101 Teleport"
+	tool.ToolTip =
+		"Equip and tap/click a location"
+
+	tool.RequiresHandle = false
+	tool.CanBeDropped = false
+
+	tool.Activated:Connect(function()
+
+		local mouse =
+			LocalPlayer:GetMouse()
+
+		if mouse and mouse.Hit and Root then
+
+			Root.CFrame =
+				CFrame.new(
+					mouse.Hit.Position +
+					Vector3.new(0,4,0)
+				)
+
+		end
+
+	end)
+
+	tool.Parent = backpack
+
+end
+
+makeButton(
+	PlayerPage,
+	"📍 GET TELEPORT TOOL",
+	giveTeleportTool
+)
+
+--========================================================
+-- TP PLAYER
+--========================================================
+
+makeLabel(
+	PlayerPage,
+	"TELEPORT TO PLAYER"
+)
+
+local function createTPButton(player)
+
+	if player == LocalPlayer then
+		return
+	end
+
+	makeButton(
+		PlayerPage,
+		"TP → "..player.Name,
+		function()
+
+			if Root and player.Character then
+
+				local target =
+					player.Character:
+					FindFirstChild(
+						"HumanoidRootPart"
+					)
+
+				if target then
+
+					Root.CFrame =
+						target.CFrame *
+						CFrame.new(0,0,-3)
+
+				end
+
+			end
+
+		end
+	)
+
+end
+
+for _,player in ipairs(Players:GetPlayers()) do
+	createTPButton(player)
+end
+
+Players.PlayerAdded:Connect(createTPButton)
+
+--========================================================
+-- VALUE BOX
+--========================================================
+
+local function valueBox(
+	parent,
+	placeholder,
+	default,
+	callback
+)
+
+	local box =
+		Instance.new("TextBox")
+
+	box.Size =
+		UDim2.new(1,-10,0,38)
+
+	box.BackgroundColor3 =
+		Color3.fromRGB(7,20,12)
+
+	box.BorderSizePixel = 0
+
+	box.PlaceholderText =
+		placeholder
+
+	box.Text =
+		tostring(default)
+
+	box.TextColor3 =
+		Color3.fromRGB(0,255,80)
+
+	box.Font = Enum.Font.Code
+	box.TextSize = 13
+
+	box.ClearTextOnFocus = false
+
+	box.ZIndex = 18
+	box.Parent = parent
+
+	Instance.new("UICorner",box).CornerRadius =
+		UDim.new(0,8)
+
+	box.FocusLost:Connect(function()
+
+		local n =
+			tonumber(box.Text)
+
+		if n then
+			callback(n)
+		end
+
+	end)
+
+	return box
+
+end
+
+makeLabel(
+	PlayerPage,
+	"CUSTOM VALUES"
+)
+
+valueBox(
+	PlayerPage,
+	"Speed",
+	speedValue,
+	function(v)
+		speedValue =
+			math.clamp(v,1,150)
+	end
+)
+
+valueBox(
+	PlayerPage,
+	"Jump",
+	jumpValue,
+	function(v)
+		jumpValue =
+			math.clamp(v,1,150)
+	end
+)
+
+valueBox(
+	PlayerPage,
+	"Hip Height",
+	hipValue,
+	function(v)
+		hipValue =
+			math.clamp(v,0,20)
+	end
+)
+
+valueBox(
+	PlayerPage,
+	"Gravity",
+	gravityValue,
+	function(v)
+
+		gravityValue =
+			math.clamp(v,0,500)
+
+		Workspace.Gravity =
+			gravityValue
+
+	end
+)
+
+valueBox(
+	PlayerPage,
+	"FOV",
+	fovValue,
+	function(v)
+
+		fovValue =
+			math.clamp(v,30,120)
+
+		if Workspace.CurrentCamera then
+
+			Workspace.CurrentCamera.FieldOfView =
+				fovValue
+
+		end
+
+	end
+)
+
+--========================================================
+-- FARM
+--========================================================
+
+makeLabel(
+	Farm,
+	"YOUR GAME TESTING TOOLS"
+)
+
+makeButton(
+	Farm,
+	"AUTO COLLECT : OFF",
+	function() end
+)
+
+makeButton(
+	Farm,
+	"AUTO QUEST : OFF",
+	function() end
+)
+
+makeButton(
+	Farm,
+	"COIN MAGNET : OFF",
+	function() end
+)
+
+makeButton(
+	Farm,
+	"FARM STATUS : READY",
+	function() end
+)
+
+--========================================================
+-- SCRIPTS
+--========================================================
+
+makeLabel(
+	Scripts,
+	"STUDIO TEST SCRIPTS"
+)
+
+makeButton(
+	Scripts,
+	"MOVEMENT TOOLS",
+	function()
+		showPage("PLAYER")
+	end
+)
+
+makeButton(
+	Scripts,
+	"TELEPORT TOOLS",
+	function()
+		showPage("PLAYER")
+	end
+)
+
+makeButton(
+	Scripts,
+	"VISUAL TOOLS",
+	function()
+		showPage("VISUALS")
+	end
+)
+
+--========================================================
+-- VISUALS
+--========================================================
+
+makeLabel(
+	Visuals,
+	"VISUAL PRESETS"
+)
+
+local ColorCorrection =
+	Lighting:FindFirstChild(
+		"Hacker101Color"
+	)
+
+if not ColorCorrection then
+
+	ColorCorrection =
+		Instance.new(
+			"ColorCorrectionEffect"
+		)
+
+	ColorCorrection.Name =
+		"Hacker101Color"
+
+	ColorCorrection.Parent =
+		Lighting
+
+end
+
+local function visualMode(mode)
+
+	if mode == "DARK" then
+
+		ColorCorrection.Brightness = -.1
+		ColorCorrection.Contrast = .35
+		ColorCorrection.Saturation = -.25
+
+	elseif mode == "LIGHT" then
+
+		ColorCorrection.Brightness = .15
+		ColorCorrection.Contrast = 0
+		ColorCorrection.Saturation = .1
+
+	elseif mode == "HORROR" then
+
+		ColorCorrection.Brightness = -.2
+		ColorCorrection.Contrast = .6
+		ColorCorrection.Saturation = -.6
+
+	elseif mode == "CYBER" then
+
+		ColorCorrection.Brightness = 0
+		ColorCorrection.Contrast = .45
+		ColorCorrection.Saturation = .4
+
+	elseif mode == "NORMAL" then
+
+		ColorCorrection.Brightness = 0
+		ColorCorrection.Contrast = 0
+		ColorCorrection.Saturation = 0
+
+	end
+
+end
+
+makeButton(
+	Visuals,
+	"DARK",
+	function()
+		visualMode("DARK")
+	end
+)
+
+makeButton(
+	Visuals,
+	"LIGHT",
+	function()
+		visualMode("LIGHT")
+	end
+)
+
+makeButton(
+	Visuals,
+	"HORROR",
+	function()
+		visualMode("HORROR")
+	end
+)
+
+makeButton(
+	Visuals,
+	"CYBER",
+	function()
+		visualMode("CYBER")
+	end
+)
+
+makeButton(
+	Visuals,
+	"NORMAL",
+	function()
+		visualMode("NORMAL")
+	end
+)
+
+--========================================================
+-- SAFE COMMAND EXECUTOR
+--========================================================
+
+makeLabel(
+	Executor,
+	"SAFE COMMAND CONSOLE"
+)
+
+local Editor =
+	Instance.new("TextBox")
+
+Editor.Size =
+	UDim2.new(1,-10,0,130)
+
+Editor.BackgroundColor3 =
+	Color3.fromRGB(2,10,5)
+
+Editor.BorderSizePixel = 0
+
+Editor.TextColor3 =
+	Color3.fromRGB(0,255,80)
+
+Editor.PlaceholderText =
+	"speed 50\njump 80\nfov 90\nnoclip\nclip\nsword"
+
+Editor.Text = ""
+
+Editor.MultiLine = true
+Editor.ClearTextOnFocus = false
+
+Editor.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Editor.TextYAlignment =
+	Enum.TextYAlignment.Top
+
+Editor.Font = Enum.Font.Code
+Editor.TextSize = 13
+
+Editor.ZIndex = 19
+Editor.Parent = Executor
+
+Instance.new("UICorner",Editor).CornerRadius =
+	UDim.new(0,8)
+
+local function executeCommand(command)
+
+	command =
+		command
+		:gsub("^%s+","")
+		:gsub("%s+$","")
+
+	local cmd,arg =
+		command:match(
+			"^(%S+)%s*(.*)$"
+		)
+
+	if not cmd then
+		return
+	end
+
+	cmd = cmd:lower()
+
+	local n = tonumber(arg)
+
+	if cmd == "speed" and n then
+
+		speedValue =
+			math.clamp(n,1,150)
+
+		speedEnabled = true
+
+	elseif cmd == "jump" and n then
+
+		jumpValue =
+			math.clamp(n,1,150)
+
+		jumpEnabled = true
+
+	elseif cmd == "hipheight" and n then
+
+		hipValue =
+			math.clamp(n,0,20)
+
+	elseif cmd == "gravity" and n then
+
+		gravityValue =
+			math.clamp(n,0,500)
+
+		Workspace.Gravity =
+			gravityValue
+
+	elseif cmd == "fov" and n then
+
+		fovValue =
+			math.clamp(n,30,120)
+
+		if Workspace.CurrentCamera then
+
+			Workspace.CurrentCamera.FieldOfView =
+				fovValue
+
+		end
+
+	elseif cmd == "noclip" then
+
+		noclipEnabled = true
+
+	elseif cmd == "clip" then
+
+		noclipEnabled = false
+
+	elseif cmd == "infinitejump" then
+
+		infiniteJumpEnabled = true
+
+	elseif cmd == "sit" then
+
+		if Humanoid then
+			Humanoid.Sit = true
+		end
+
+	elseif cmd == "stand" then
+
+		if Humanoid then
+			Humanoid.Sit = false
+		end
+
+	elseif cmd == "sword" then
+
+		giveTestSword()
+
+	elseif cmd == "teleporttool" then
+
+		giveTeleportTool()
+
+	elseif cmd == "dark" then
+
+		visualMode("DARK")
+
+	elseif cmd == "light" then
+
+		visualMode("LIGHT")
+
+	elseif cmd == "horror" then
+
+		visualMode("HORROR")
+
+	elseif cmd == "cyber" then
+
+		visualMode("CYBER")
+
+	elseif cmd == "normal" then
+
+		visualMode("NORMAL")
+
+	elseif cmd == "reset" then
+
+		if Humanoid then
+			Humanoid.Health = 0
+		end
+
+	end
+
+end
+
+makeButton(
+	Executor,
+	"▶ RUN",
+	function()
+
+		for line in
+			Editor.Text:gmatch("[^\r\n]+") do
+
+			executeCommand(line)
+
+		end
+
+	end
+)
+
+makeButton(
+	Executor,
+	"✕ CLEAR",
+	function()
+		Editor.Text = ""
+	end
+)
+
+--========================================================
+-- SETTINGS
+--========================================================
+
+makeLabel(
+	Settings,
+	"SETTINGS"
+)
+
+makeButton(
+	Settings,
+	"RESET ALL",
+	function()
+
+		speedValue = 50
+		jumpValue = 75
+		hipValue = DEFAULT_HIP
+		gravityValue = DEFAULT_GRAVITY
+		fovValue = DEFAULT_FOV
+
+		speedEnabled = false
+		jumpEnabled = false
+		noclipEnabled = false
+		infiniteJumpEnabled = false
+
+		Workspace.Gravity =
+			DEFAULT_GRAVITY
+
+		if Workspace.CurrentCamera then
+
+			Workspace.CurrentCamera.FieldOfView =
+				DEFAULT_FOV
+
+		end
+
+	end
+)
+
+makeButton(
+	Settings,
+	"PARTICLES : ON / OFF",
+	function()
+
+		ParticleLayer.Visible =
+			not ParticleLayer.Visible
+
+	end
+)
+
+makeButton(
+	Settings,
+	"CLOSE PANEL",
+	function()
+		closeMenu()
+	end
+)
+
+--========================================================
+-- OPEN / CLOSE
+--========================================================
+
+local opening = false
+local closing = false
+
+local function openMenu()
+
+	if opening then
+		return
+	end
+
+	opening = true
+
+	Floating.Visible = false
+
+	Main.Visible = true
+
+	Main.Size =
+		UDim2.new(0,0,0,0)
+
+	TweenService:Create(
+		Main,
+		TweenInfo.new(
+			.3,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		),
+		{
+			Size =
+				UDim2.new(0,470,0,340)
+		}
+	):Play()
+
+	task.delay(.32,function()
+		opening = false
+	end)
+
+end
+
+function closeMenu()
+
+	if closing then
+		return
+	end
+
+	closing = true
+
+	TweenService:Create(
+		Main,
+		TweenInfo.new(
+			.25,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.In
+		),
+		{
+			Size =
+				UDim2.new(0,0,0,0)
+		}
+	):Play()
+
+	task.delay(.27,function()
+
+		Main.Visible = false
+
+		-- IMPORTANT:
+		-- There is NO Matrix layer here.
+		-- Therefore nothing can cover the screen
+		-- with 101010101010.
+
+		Floating.Visible = true
+
+		Floating.Size =
+			UDim2.new(0,0,0,0)
+
+		TweenService:Create(
+			Floating,
+			TweenInfo.new(
+				.3,
+				Enum.EasingStyle.Back,
+				Enum.EasingDirection.Out
+			),
+			{
+				Size =
+					UDim2.new(0,58,0,58)
+			}
+		):Play()
+
+		closing = false
+
+	end)
+
+end
+
+Close.MouseButton1Click:Connect(closeMenu)
+Minimize.MouseButton1Click:Connect(closeMenu)
+
+--========================================================
+-- 101 LOGO CLICK
+--========================================================
+
+Floating.MouseButton1Click:Connect(function()
+
+	-- Dragging the logo does NOT open it.
+	if iconMoved then
+		iconMoved = false
+		return
+	end
+
+	openMenu()
+
+end)
+
+--========================================================
+-- MAIN WINDOW DRAG
+--========================================================
+
+local dragging = false
+local dragStart
+local startPosition
+
+TopBar.InputBegan:Connect(function(input)
+
+	if input.UserInputType ==
+		Enum.UserInputType.MouseButton1
+		or input.UserInputType ==
+		Enum.UserInputType.Touch then
+
+		dragging = true
+
+		dragStart =
+			input.Position
+
+		startPosition =
+			Main.Position
+
+		input.Changed:Connect(function()
+
+			if input.UserInputState ==
+				Enum.UserInputState.End then
+
+				dragging = false
+
+			end
+
+		end)
+
+	end
+
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+	if not dragging then
+		return
+	end
+
+	if input.UserInputType ==
+		Enum.UserInputType.MouseMovement
+		or input.UserInputType ==
+		Enum.UserInputType.Touch then
+
+		local delta =
+			input.Position -
+			dragStart
+
+		Main.Position =
+			UDim2.new(
+				startPosition.X.Scale,
+				startPosition.X.Offset + delta.X,
+
+				startPosition.Y.Scale,
+				startPosition.Y.Offset + delta.Y
+			)
+
+	end
+
+end)
+
+--========================================================
+-- NOCLIP
+--========================================================
+
+RunService.Stepped:Connect(function()
+
+	if not Character then
+		return
+	end
+
+	if noclipEnabled then
+
+		for _,part in
+			ipairs(Character:GetDescendants()) do
+
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+
+		end
+
+	end
+
+end)
+
+--========================================================
+-- MOVEMENT
+--========================================================
+
+RunService.RenderStepped:Connect(function()
+
+	if not Humanoid then
+		return
+	end
+
+	Humanoid.WalkSpeed =
+		speedEnabled
+		and speedValue
+		or DEFAULT_SPEED
+
+	Humanoid.JumpPower =
+		jumpEnabled
+		and jumpValue
+		or DEFAULT_JUMP
+
+	Humanoid.HipHeight =
+		hipValue
+
+end)
+
+--========================================================
+-- INFINITE JUMP
+--========================================================
+
+UserInputService.JumpRequest:Connect(function()
+
+	if infiniteJumpEnabled
+		and Humanoid then
+
+		Humanoid:
+			ChangeState(
+				Enum.HumanoidStateType.Jumping
+			)
+
+	end
+
+end)
+
+--========================================================
+-- SESSION TIMER
+--========================================================
+
+task.spawn(function()
+
+	while GUI.Parent do
+
+		local elapsed =
+			math.floor(
+				os.clock() - startTime
+			)
+
+		local hours =
+			math.floor(
+				elapsed / 3600
+			)
+
+		local minutes =
+			math.floor(
+				(elapsed % 3600) / 60
+			)
+
+		local seconds =
+			elapsed % 60
+
+		SessionButton.Text =
+			string.format(
+				"TIME PLAYED : %02d:%02d:%02d",
+				hours,
+				minutes,
+				seconds
+			)
+
+		task.wait(1)
+
+	end
+
+end)
+
+--========================================================
+-- RIGHT SHIFT
+--========================================================
+
+UserInputService.InputBegan:Connect(function(
+	input,
+	processed
+)
+
+	if processed then
+		return
+	end
+
+	if input.KeyCode ==
+		Enum.KeyCode.RightShift then
+
+		if Main.Visible then
+			closeMenu()
+		else
+			openMenu()
+		end
+
+	end
+
+end)
+
+--========================================================
+-- START
+--========================================================
+
+showPage("HOME")
+
+print("================================")
+print(" HACKER 101 FINAL VERSION")
+print(" FULL SCREEN BINARY REMOVED")
+print(" DRAGGABLE 101 LOGO ENABLED")
+print("================================")
